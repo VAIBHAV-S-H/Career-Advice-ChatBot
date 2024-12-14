@@ -1,24 +1,14 @@
-import sys
-import os
-from pathlib import Path
-
-# Get the absolute path to the project root directory
-project_root = Path(__file__).parent.parent.absolute()
-sys.path.insert(0, str(project_root))
-
 import streamlit as st
-from backend.api_model import Groq
+
 
 # Function to navigate between pages
 def navigate_to(page_name):
     st.session_state.current_page = page_name
 
 
-# Initialize session state for current page and chat history
+# Initialize session state for current page
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Home"
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
 # Main App Content
 if st.session_state.current_page == "Home":
@@ -34,7 +24,7 @@ elif st.session_state.current_page == "FAQs":
 # Sidebar Content
 with st.sidebar:
     # Input for API Key
-    api_key = st.text_input(
+    st.text_input(
         "Groq API Key",
         type="password",
         placeholder="Enter your Groq API key",
@@ -61,30 +51,26 @@ with st.sidebar:
         "Disclaimer: This chatbot provides general career\nadvice and does not guarantee job placements."
     )
 
-# Chat Interface (Main Body, Only Visible on Home Page)
+
+# Store the API Key
+api_key = st.session_state.get("api_key", "")
+
+# Infinite Text Inputs Section (Main Body, Only Visible on Home Page)
 if st.session_state.current_page == "Home":
-    st.markdown("### Chat with Career Advisor:")
-    
-    # Initialize Groq if API key is provided
-    if api_key:
-        advisor = Groq(api_key)
-        
-        # Display chat history
-        for message in st.session_state.chat_history:
-            with st.chat_message(message["role"]):
-                st.write(message["content"])
-        
-        # Chat input
-        user_input = st.chat_input("Ask for career advice...")
-        
-        if user_input:
-            # Add user message to chat history
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
-            
-            # Get bot response
-            with st.chat_message("assistant"):
-                response = advisor.get_career_advice(user_input)
-                st.write(response)
-                st.session_state.chat_history.append({"role": "assistant", "content": response})
-    else:
-        st.warning("Please enter your Groq API key in the sidebar to start chatting.")
+    st.markdown("### Input Section:")
+    if "inputs" not in st.session_state:
+        st.session_state.inputs = [""]  # Initialize with one empty input field
+
+    # Function to add a new input field
+    def add_input():
+        st.session_state.inputs.append("")  # Append a new empty input to the list
+
+    # Render all current input fields
+    for i, value in enumerate(st.session_state.inputs):
+        st.session_state.inputs[i] = st.text_input(
+            f"Input {i + 1}", value=value, key=f"input_{i}"
+        )
+
+    # Button to add a new input field dynamically
+    if st.button("Add More Inputs"):
+        add_input()
