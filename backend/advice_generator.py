@@ -1,7 +1,9 @@
 from api_model import Groq
+from langchain_core.messages import SystemMessage, HumanMessage
 
 
 class AdviceGenerator:
+    HISTORY_PLACEHOLDER = "<history>"
     SYSTEM_PROMPT = """
         You are a helpful and supportive career advisor specializing in engineering fields. Your goal is to assist engineering students and job seekers by offering personalized, empathetic, and actionable career advice. Your advice should be clear, friendly, and tailored to each user's needs based on their background, experience level, and career interests.
 
@@ -24,10 +26,40 @@ class AdviceGenerator:
         - An experienced engineer looks for advice on transitioning to a leadership role or a different domain (e.g., cloud computing).
 
         Always ensure that your advice matches the user's experience level and field of interest, and provide suggestions that are realistic and actionable.
+        
+        Here is the conversation history:
+        
+    """
+
+    INITIAL_MESSAGE = """Hello! I'm your AI Career Advisor. I can help you with:
+        - Career guidance and planning
+        - Skill development advice
+        - Job search strategies
+        - Resume and interview tips
+        - Industry insights
+
+        What would you like to discuss about your career?
     """
 
     def __init__(self, api_key: str):
         self.llm = Groq(api_key=api_key)
 
-    def generate_advice(self):
-        pass
+    def generate_advice(self, history: list, user_input: str):
+        # filled_system_prompt = self.SYSTEM_PROMPT.replace(
+        # self.HISTORY_PLACEHOLDER, history
+        # )
+
+        try:
+            response = self.llm.invoke(
+                [
+                    SystemMessage(content=self.SYSTEM_PROMPT),
+                    HumanMessage(content=user_input),
+                ]
+            )
+
+            return response.content
+        except Exception as e:
+            return f"Sorry, I couldn't generate advice at the moment: {str(e)}"
+
+
+adv = AdviceGenerator

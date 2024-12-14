@@ -10,6 +10,9 @@ def navigate_to(page_name):
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Home"
 
+if "conversation_history" not in st.session_state:
+    st.session_state["conversation_history"] = []
+
 # Main App Content
 if st.session_state.current_page == "Home":
     st.title("Career Advice ChatBot")
@@ -53,27 +56,23 @@ with st.sidebar:
 
 
 # Store the API Key
-api_key = st.session_state.get("api_key", "")
+api_key = st.session_state.get("api_key")
 
 name = st.text_input("Name:", placeholder="Enter your name")
 print(name)
 
-# Infinite Text Inputs Section (Main Body, Only Visible on Home Page)
 if st.session_state.current_page == "Home":
     st.markdown("### Input Section:")
     if "inputs" not in st.session_state:
-        st.session_state.inputs = [""]  # Initialize with one empty input field
+        st.session_state.inputs = [""]
 
-    # Function to add a new input field
     def add_input():
         st.session_state.inputs.append("")  # Append a new empty input to the list
 
-    # Render all current input fields
     for i, value in enumerate(st.session_state.inputs):
         st.session_state.inputs[i] = st.text_input(
             f"Input {i + 1}", value=value, key=f"input_{i}"
         )
 
-    # Button to add a new input field dynamically
     if st.button("Add More Inputs"):
         add_input()
