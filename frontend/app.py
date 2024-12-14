@@ -55,6 +55,9 @@ with st.sidebar:
 # Store the API Key
 api_key = st.session_state.get("api_key", "")
 
+name = st.text_input("Name:", placeholder="Enter your name")
+print(name)
+
 # Infinite Text Inputs Section (Main Body, Only Visible on Home Page)
 if st.session_state.current_page == "Home":
     st.markdown("### Input Section:")
