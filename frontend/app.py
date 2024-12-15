@@ -31,6 +31,8 @@ if "chat_manager" not in st.session_state:
     st.session_state.chat_manager = ChatManager()
 if "advice_generator" not in st.session_state:
     st.session_state.advice_generator = None  # Will initialize after API key is set
+if "initial_message_displayed" not in st.session_state:
+    st.session_state.initial_message_displayed = False
 
 # Sidebar
 with st.sidebar:
@@ -64,6 +66,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.name_entered = False
         st.session_state.chat_manager.clear_history()
+        st.session_state.initial_message_displayed = False
 
     st.markdown("---")
     st.markdown("Contact us at: support@careerbot.ai")
@@ -81,29 +84,36 @@ if st.session_state.current_page == "Home":
     st.title("Career Advisor Chat")
 
     # Name input if not already entered
-    if not st.session_state.name_entered:
+    if not st.session_state.get("name_entered", False):
         name = st.text_input(
-            "Name:", placeholder="Enter your name", value=st.session_state.name
+            "Name:",
+            placeholder="Enter your name",
+            value=st.session_state.get("name", ""),
         )
-        if name and name != st.session_state.name:
+        if name and name != st.session_state.get("name", ""):
             st.session_state.name = name
             st.session_state.name_entered = True
 
-            initial_message = f"""Hello {name}! I'm your AI Career Advisor. I can help you with:
-            - Career guidance and planning
-            - Skill development advice
-            - Job search strategies
-            - Industry insights
-            
-            What would you like to discuss about your career?"""
+            # Check if the initial message has already been displayed
+            if not st.session_state.initial_message_displayed:
+                initial_message = f"""Hello {name}! I'm your AI Career Advisor. I can help you with:
+                \n- Career guidance and planning
+                \n- Skill development advice
+                \n- Job search strategies
+                \n- Industry insights
+                \nWhat would you like to discuss about your career?"""
 
-            st.session_state.messages = []
+                # Add the initial message to messages only if it's not already there
+                if not any(
+                    msg.get("role") == "assistant" and "Hello" in msg.get("content", "")
+                    for msg in st.session_state.messages
+                ):
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": initial_message}
+                    )
 
-            with st.chat_message("assistant"):
-                st.markdown(initial_message)
-            st.session_state.messages.append(
-                {"role": "assistant", "content": initial_message}
-            )
+                # Mark the initial message as displayed
+                st.session_state.initial_message_displayed = True
 
     # Display chat messages
     for message in st.session_state.messages:
