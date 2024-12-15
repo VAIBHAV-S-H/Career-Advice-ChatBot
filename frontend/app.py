@@ -1,48 +1,53 @@
-import streamlit as st
+import os
 import sys
+import streamlit as st
 
 sys.path.append("../")
 from backend.advice_generator import AdviceGenerator
 from backend.conversation_manager import ChatManager
 
 
-# Function to navigate between pages
 def navigate_to(page_name):
     st.session_state.current_page = page_name
 
 
-# Initialize session state for current page
+# Page config
+st.set_page_config(page_title="Career Advisor", layout="wide")
+
+# Initialize ALL session state variables at the very beginning
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "api_key" not in st.session_state:
+    st.session_state.api_key = os.getenv(
+        "GROQ_API_KEY", ""
+    )  # Try to get from environment first
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Home"
-if "inputs" not in st.session_state:
-    st.session_state.inputs = [""]  # Start with a single empty input field
-if "responses" not in st.session_state:
-    st.session_state.responses = [""]  # Initialize with a single empty response
-if "api_key" not in st.session_state:
-    st.session_state.api_key = ""
 if "name_entered" not in st.session_state:
     st.session_state.name_entered = False
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []  # Track chat history for LLM response
-if "welcome_message" not in st.session_state:
-    st.session_state.welcome_message = ""  # Track the welcome message
-if "input_count" not in st.session_state:
-    st.session_state.input_count = 1  # Track the number of input fields
-if "name" not in st.session_state:  # Track the user's name in session state
+if "name" not in st.session_state:
     st.session_state.name = ""
+if "chat_manager" not in st.session_state:
+    st.session_state.chat_manager = ChatManager()
+if "advice_generator" not in st.session_state:
+    st.session_state.advice_generator = None  # Will initialize after API key is set
 
-# Sidebar Content
+# Sidebar
 with st.sidebar:
-    st.text_input(
+    st.title("Career Advisor")
+    api_key = st.text_input(
         "Groq API Key",
+        value=st.session_state.api_key,  # Use existing value if present
         type="password",
         placeholder="Enter your Groq API key",
-        key="api_key",
+        key="api_key_input",
     )
 
-    # Sidebar Header and Divider
-    st.markdown("## Career Advice Chatbot")
-    st.markdown("---")
+    if api_key:
+        st.session_state.api_key = api_key
+        # Initialize advice generator when API key is set
+        if st.session_state.advice_generator is None:
+            st.session_state.advice_generator = AdviceGenerator(api_key=api_key)
 
     # Navigation Section
     st.markdown("### Navigation:")
@@ -52,107 +57,85 @@ with st.sidebar:
         navigate_to("FAQs")
 
     st.markdown("---")
+    st.markdown("### About")
+    st.write("I'm your AI Career Advisor specialized in engineering fields.")
 
+    if st.button("Clear Conversation"):
+        st.session_state.messages = []
+        st.session_state.name_entered = False
+        st.session_state.chat_manager.clear_history()
+
+    st.markdown("---")
     st.markdown("Contact us at: support@careerbot.ai")
     st.markdown(
         "Disclaimer: This chatbot provides general career\nadvice and does not guarantee job placements."
     )
 
-groq_api_key = st.session_state.api_key
-if not groq_api_key:
+# Check for API key before proceeding
+if not st.session_state.api_key:
     st.warning("Please enter your Groq API Key in the sidebar to continue.")
     st.stop()
 
-advice_generator = AdviceGenerator(api_key=groq_api_key)
-chat_manager = ChatManager()
-
-# Main App Content
+# Main content based on current page
 if st.session_state.current_page == "Home":
-    st.title("Career Advice ChatBot")
-    st.subheader("Your guide to building a brighter future")
+    st.title("Career Advisor Chat")
 
-    # Prompt for user's name
+    # Name input if not already entered
     if not st.session_state.name_entered:
         name = st.text_input(
             "Name:", placeholder="Enter your name", value=st.session_state.name
         )
-
-        if name:
-            st.session_state.name = name  # Save the name in session state
+        if name and name != st.session_state.name:
+            st.session_state.name = name
             st.session_state.name_entered = True
-            chat_manager.user_history(f"My name is {name}")
 
-            # Generate welcome message using LLM model
-            welcome_message = f"""Hello {name}! I'm your AI Career Advisor. I can help you with:
-            \n- Career guidance and planning
-            \n- Skill development advice
-            \n- Job search strategies
-            \n- Industry insights
+            initial_message = f"""Hello {name}! I'm your AI Career Advisor. I can help you with:
+            - Career guidance and planning
+            - Skill development advice
+            - Job search strategies
+            - Industry insights
+            
+            What would you like to discuss about your career?"""
 
-            \nWhat would you like to discuss about your career?"""
-            chat_manager.bot_history(welcome_message)
+            st.session_state.messages = []
 
-            # Store the welcome message in session state
-            st.session_state.welcome_message = welcome_message
-
-    # Display the welcome message if not displayed already
-    if st.session_state.name_entered and st.session_state.welcome_message:
-        st.write(st.session_state.welcome_message)
-
-    # Display Input Section after name is entered
-    if st.session_state.name_entered:
-        st.markdown("### Input Section:")
-
-        # Function to add new input
-        def add_new_input():
-            st.session_state.input_count += 1
-            st.session_state.inputs.append("")  # Add a new empty input field
-            st.session_state.responses.append("")  # Add corresponding response entry
-
-        # Display the existing input fields and responses
-        for i in range(st.session_state.input_count):
-            user_input = st.text_input(
-                f"Input {i + 1}", value=st.session_state.inputs[i], key=f"input_{i}"
+            with st.chat_message("assistant"):
+                st.markdown(initial_message)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": initial_message}
             )
 
-            # If user provides input and presses Enter, generate advice
-            if user_input:
-                st.session_state.inputs[i] = user_input
-                st.session_state.chat_history.append(f"You: {user_input}")
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-                # Store user input in chat history
-                chat_manager.user_history(user_input)
+    # Chat input
+    if st.session_state.name_entered:
+        if prompt := st.chat_input("Ask me about your career..."):
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
 
-                # Generate advice based on chat history
-                history = chat_manager.get_history()
-                advice = advice_generator.generate_advice(
-                    history=history, user_input=user_input
+            with st.chat_message("assistant"):
+                st.session_state.chat_manager.user_history(prompt)
+                response = st.session_state.advice_generator.generate_advice(
+                    history=st.session_state.chat_manager.get_history(),
+                    user_input=prompt,
                 )
-
-                # Store the AI response in session state and display
-                st.session_state.responses[i] = (
-                    advice  # Store the response for current input
-                )
-                st.session_state.chat_history.append(f"AI: {advice}")
-                chat_manager.bot_history(advice)
-
-            # Display responses below the input fields
-            if st.session_state.responses[i]:
-                st.write(f"**Career Coach:** {st.session_state.responses[i]}")
-
-        # Store the current state of the button click in session state to avoid multiple triggers
-        if "button_pressed" not in st.session_state:
-            st.session_state.button_pressed = False
-
-        # Button to add a new input field
-        if st.button("Enter", key="add_input_button"):
-            if not st.session_state.button_pressed:
-                add_new_input()
-                st.session_state.button_pressed = True  # Prevent double triggering
-
-        # Reset the button state after the interaction
-        if st.session_state.button_pressed:
-            st.session_state.button_pressed = False
+                st.session_state.chat_manager.bot_history(response)
+                st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 elif st.session_state.current_page == "FAQs":
-    st.title("FAQs")
+    st.title("Frequently Asked Questions")
+    st.markdown("""
+    ### Common Questions
+    1. How can I use this Career Advisor?
+    2. What types of career advice can I get?
+    3. How do I get started with career planning?
+    
+    ### Getting Started
+    Simply enter your name and start chatting with our AI Career Advisor. 
+    Ask any questions related to your engineering career path!
+    """)
