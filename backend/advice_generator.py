@@ -1,5 +1,5 @@
-from api_model import Groq
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_groq import ChatGroq
 
 
 class AdviceGenerator:
@@ -12,7 +12,7 @@ class AdviceGenerator:
         2. Empathy: Always show empathy and understanding of the user's situation. Acknowledge their concerns and provide motivational support.
         3. Actionable Guidance: Provide practical steps or resources that users can use to improve their career prospects, such as skills to learn, certifications to consider, or job search strategies.
         4. Tone: Maintain a positive, professional, and encouraging tone. Offer advice in a way that inspires confidence and motivates users to take the next step in their career.
-        5. Concise and Clear: Keep the advice clear, concise, and to the point. Avoid overwhelming the user with too much information at once.
+        5. Concise and Clear: Keep the advice clear, concise, and to the point. Avoid overwhelming the user with too much information at once. (Word limit 100 words)
         6. Addressing Common Queries: Be prepared to answer common career-related questions, including topics like:
             - What are the essential skills for a career in [X]?
             - How can I break into a new field like data science?
@@ -25,34 +25,28 @@ class AdviceGenerator:
         - A student interested in data science is unsure about which area (AI, machine learning, analytics) to specialize in.
         - An experienced engineer looks for advice on transitioning to a leadership role or a different domain (e.g., cloud computing).
 
-        Always ensure that your advice matches the user's experience level and field of interest, and provide suggestions that are realistic and actionable.
-        
-        Here is the conversation history:
-        
-    """
+        Remember, you have the full context of the conversation history and should take into account everything that has been said before. Below is the complete conversation history so far. Your response should reflect all previous messages and provide personalized advice based on that history.
 
-    INITIAL_MESSAGE = """Hello! I'm your AI Career Advisor. I can help you with:
-        - Career guidance and planning
-        - Skill development advice
-        - Job search strategies
-        - Resume and interview tips
-        - Industry insights
+        Conversation History:
+        <history>
 
-        What would you like to discuss about your career?
+        Now, respond to the user's current inquiry.
     """
 
     def __init__(self, api_key: str):
-        self.llm = Groq(api_key=api_key)
+        self.llm = ChatGroq(
+            temperature=0, groq_api_key=api_key, model="llama3-70b-8192"
+        )
 
-    def generate_advice(self, history: list, user_input: str):
-        # filled_system_prompt = self.SYSTEM_PROMPT.replace(
-        # self.HISTORY_PLACEHOLDER, history
-        # )
+    def generate_advice(self, history: str, user_input: str):
+        filled_system_prompt = self.SYSTEM_PROMPT.replace(
+            self.HISTORY_PLACEHOLDER, history
+        )
 
         try:
             response = self.llm.invoke(
                 [
-                    SystemMessage(content=self.SYSTEM_PROMPT),
+                    SystemMessage(content=filled_system_prompt),
                     HumanMessage(content=user_input),
                 ]
             )
@@ -60,6 +54,3 @@ class AdviceGenerator:
             return response.content
         except Exception as e:
             return f"Sorry, I couldn't generate advice at the moment: {str(e)}"
-
-
-adv = AdviceGenerator
