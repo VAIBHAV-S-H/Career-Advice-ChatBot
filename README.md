@@ -26,8 +26,8 @@ This application is a Streamlit-based AI-powered career advisor specialized in e
 ### 1. Clone the Repository
 
 ```bash
-git clone <https://github.com/RishabhJeppu/Career-Advice-ChatBot.git>
-cd <Career-Advice-ChatBot>
+git clone https://github.com/RishabhJeppu/Career-Advice-ChatBot.git
+cd Career-Advice-ChatBot
 ```
 
 ### 2. Set Up Virtual Environment
