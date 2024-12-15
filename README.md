@@ -103,9 +103,4 @@ This will open the application in your default web browser. If it doesn’t open
 
   - **Solution:** Use the "Clear Conversation" button in the sidebar to reset the app.
 
----
-
-## License
-
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
