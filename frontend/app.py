@@ -16,6 +16,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "Home"
 if "inputs" not in st.session_state:
     st.session_state.inputs = [""]  # Start with a single empty input field
+if "responses" not in st.session_state:
+    st.session_state.responses = [""]  # Initialize with a single empty response
 if "api_key" not in st.session_state:
     st.session_state.api_key = ""
 if "name_entered" not in st.session_state:
@@ -28,7 +30,6 @@ if "input_count" not in st.session_state:
     st.session_state.input_count = 1  # Track the number of input fields
 if "name" not in st.session_state:  # Track the user's name in session state
     st.session_state.name = ""
-
 
 # Sidebar Content
 with st.sidebar:
@@ -47,8 +48,6 @@ with st.sidebar:
     st.markdown("### Navigation:")
     if st.button("Home"):
         navigate_to("Home")
-    if st.button("Career Resources"):
-        navigate_to("Career Resources")
     if st.button("FAQs"):
         navigate_to("FAQs")
 
@@ -106,16 +105,11 @@ if st.session_state.current_page == "Home":
 
         # Function to add new input
         def add_new_input():
-            # Check if the last input field is not empty
-            if st.session_state.inputs[-1] != "":
-                st.session_state.input_count += 1
-                st.session_state.inputs.append("")
-            else:
-                st.warning(
-                    "Please fill the existing input field before adding a new one."
-                )
+            st.session_state.input_count += 1
+            st.session_state.inputs.append("")  # Add a new empty input field
+            st.session_state.responses.append("")  # Add corresponding response entry
 
-        # Display the existing input fields
+        # Display the existing input fields and responses
         for i in range(st.session_state.input_count):
             user_input = st.text_input(
                 f"Input {i + 1}", value=st.session_state.inputs[i], key=f"input_{i}"
@@ -135,19 +129,30 @@ if st.session_state.current_page == "Home":
                     history=history, user_input=user_input
                 )
 
-                # Display advice and store it in chat history
-                st.write(f"AI: {advice}")
+                # Store the AI response in session state and display
+                st.session_state.responses[i] = (
+                    advice  # Store the response for current input
+                )
                 st.session_state.chat_history.append(f"AI: {advice}")
                 chat_manager.bot_history(advice)
 
-                print(history)
+            # Display responses below the input fields
+            if st.session_state.responses[i]:
+                st.write(f"**Career Coach:** {st.session_state.responses[i]}")
+
+        # Store the current state of the button click in session state to avoid multiple triggers
+        if "button_pressed" not in st.session_state:
+            st.session_state.button_pressed = False
 
         # Button to add a new input field
-        if st.button("Add New Input", key="add_input_button"):
-            add_new_input()
-            st.rerun()
+        if st.button("Enter", key="add_input_button"):
+            if not st.session_state.button_pressed:
+                add_new_input()
+                st.session_state.button_pressed = True  # Prevent double triggering
 
-elif st.session_state.current_page == "Career Resources":
-    st.title("Career Resources")
+        # Reset the button state after the interaction
+        if st.session_state.button_pressed:
+            st.session_state.button_pressed = False
+
 elif st.session_state.current_page == "FAQs":
     st.title("FAQs")
