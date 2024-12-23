@@ -86,6 +86,7 @@ This will open the application in your default web browser. If it doesn’t open
 - **Can I use this app without an API key?**
 
   - No, the Groq API key is mandatory to use the app.
+  - To manage your keys, visit the [Groq Console Keys](https://console.groq.com/keys)
 
 - **Is my data secure?**
 

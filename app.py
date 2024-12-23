@@ -52,6 +52,12 @@ with st.sidebar:
         placeholder="Enter your Groq API key",
         key="api_key_input",
     )
+    
+    # Add the link beneath the API text input
+    st.markdown(
+        "[Get your Groq API Key here](https://console.groq.com/keys)",
+        unsafe_allow_html=True,
+    )
 
     if api_key:
         st.session_state.api_key = api_key
@@ -75,7 +81,7 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown("Contact us at: support@careerbot.ai")
+    st.markdown("Contact us at: vaibhavsh.official@gmail.com")
     st.markdown(
         "Disclaimer: This chatbot provides general career\nadvice and does not guarantee job placements."
     )
