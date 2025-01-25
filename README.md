@@ -2,6 +2,9 @@
 
 This application is a Streamlit-based AI-powered career advisor specialized in engineering fields. It provides tailored career guidance, skill development advice, job search strategies, and industry insights to help users achieve their career goals.
 
+The app is also deployed in streamlit
+
+Visit link : [ChatBotApp](https://growcareer.streamlit.app)
 ---
 
 ## Features
